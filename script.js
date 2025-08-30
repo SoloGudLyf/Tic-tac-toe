@@ -1,65 +1,124 @@
-// Initialize a board array whose values will be 0
-let board = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+// Initialize board array
 
-//Initialize 2 player objects
-let player1 = { name: "solo", score: 0 };
-let player2 = { name: "godwin", score: 0 };
+let board = Array(9).fill("");
+let currentPlayer = "X";
+let phase = "placement";
+let gameBoard = document.querySelector(".gameboard");
+let piecesPlaced = { X: 0, O: 1 };
+let selected = [];
+let restartBtn = document.querySelector(".restart");
+let announcement = document.querySelector(".announcement");
 
-// Assign the divs to the board array
-let clicked = true;
-const getDivClicked = (function () {
-  let cells = document.getElementsByClassName("board");
-  console.log(cells);
-  for (let i = 0; i < cells.length; i++) {
-    cells[i].addEventListener("click", (event) => {
-      const divClassName = event.target.className;
-      let cellClicked = divClassName.split(" ");
-      console.log(cellClicked[0]);
-      let divClicked = document.querySelector("." + cellClicked[0]);
-
-      // Check if div already contains a value if yes then leave it as it is
-      // If no then modify it and toggle between player states
-
-      if (divClicked.textContent.trim() == "") {
-        if (clicked) {
-          divClicked.textContent = "X";
-        } else {
-          divClicked.textContent = "0";
-        }
-        clicked = !clicked;
-      }
-
-      if (divClassName == "cell1 board") {
-        board[0] = 1;
-      } else if (divClassName == "cell2 board") {
-        board[1] = 1;
-      } else if (divClassName == "cell3 board") {
-        board[2] = 1;
-      } else if (divClassName == "cell4 board") {
-        board[3] = 1;
-      } else if (divClassName == "cell5 board") {
-        board[4] = 1;
-      } else if (divClassName == "cell6 board") {
-        board[5] = 1;
-      } else if (divClassName == "cell7 board") {
-        board[6] = 1;
-      } else if (divClassName == "cell8 board") {
-        board[7] = 1;
-      } else if (divClassName == "cell9 board") {
-        board[8] = 1;
-      }
-      console.log(board);
-    });
+function connectBoard() {
+  for (let i = 0; i < gameBoard.children.length; i++) {
+    board[i] = gameBoard.children[i].textContent;
   }
-})();
+  console.log(board);
+}
+function makeMove(arr, index, cell) {
+  if (arr[index] === "") {
+    arr[index] = currentPlayer;
+    cell.textContent = currentPlayer;
 
-//Check if a div has already been clicked if so then maintain the value it corresponds with in
-// the object and DOM
+    if (currentPlayer == "X") {
+      piecesPlaced.X += 1;
+    } else {
+      piecesPlaced.O += 1;
+    }
+    console.log(piecesPlaced);
 
-// Set up a click event handler for all the divs and change their value to 1
-// when clicked on the first time and 2 when clicked on the second time toggling between these
-// two modes
+    currentPlayer = currentPlayer == "X" ? "O" : "X";
+  } else {
+    console.log("Invalid move");
+  }
+  if (checkWinner(board) === true) {
+    return "Game over";
+  }
+  connectBoard();
+}
 
-//set up a conditional statement to get when a player wins or not or draw
+function allEqual(arr) {
+  let first = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] === "") return false;
+    if (arr[i] !== first) {
+      return false;
+    }
+  }
+  return true;
+}
 
-// Display a message on the page as to which player has won and lost
+function checkWinner(board) {
+  let winningCombinations = [
+    [0, 1, 2], // Row 1
+    [3, 4, 5], // Row 2
+    [6, 7, 8], // Row 3
+    [0, 3, 6], // Column 1
+    [1, 4, 7], // Column 2
+    [2, 5, 8], // Column 3
+    [0, 4, 8], // Diagonal \
+    [2, 4, 6], // Diagonal /
+  ];
+  for (let combo of winningCombinations) {
+    let line = [board[combo[0]], board[combo[1]], board[combo[2]]];
+    if (allEqual(line) == true && line[0] !== "" && line[1] !== "") {
+      announcement.textContent = `Player ${line[0]} wins`;
+      console.log([board[([combo[0]], board[combo[1]], board[combo[2]])]]);
+      connectBoard();
+      console.log(line);
+      return true;
+    }
+  }
+  return false;
+}
+
+function placePiece(arr, initial, final) {
+  let finalPos = final.cell.textContent;
+
+  if (finalPos == "") {
+    let pieceSelected = initial.cell.textContent;
+    console.log(pieceSelected);
+    initial.cell.textContent = "";
+    arr[initial] = "-";
+    final.cell.textContent = pieceSelected;
+    selected = [];
+    arr.splice(final, 0, pieceSelected);
+  } else {
+    selected = [];
+  }
+  if (checkWinner(board) === true) {
+    return "Game over";
+  }
+}
+
+gameBoard.addEventListener("click", function (e) {
+  let cellIndex = Number(e.target.getAttribute("data-index"));
+  let cellClicked = e.target;
+
+  if (piecesPlaced.X < 4 && piecesPlaced.O < 4) {
+    makeMove(board, cellIndex, cellClicked);
+  } else {
+    cell = { cell: cellClicked, index: cellIndex };
+    selected.push(cell);
+    console.log(selected);
+    if (selected.length == 2) {
+      placePiece(board, selected[0], selected[1]);
+    } else if (selected.length > 2) {
+      selected.shift();
+    }
+  }
+});
+
+function clearAll() {
+  board = ["", "", "", "", "", "", "", "", ""];
+  selected = [];
+  for (let i = 0; i < gameBoard.children.length; i++) {
+    gameBoard.children[i].textContent = "";
+  }
+  piecesPlaced.X = 0;
+  piecesPlaced.O = 1;
+  currentPlayer = "X";
+  announcement.textContent = "";
+}
+
+restartBtn.addEventListener("click", () => clearAll());
